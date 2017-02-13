@@ -25,7 +25,8 @@ __global__ void myAddKernel(int *c, const int *a, const int *b)//TODO:Одолжить
 
 __global__ void mulMatrixOnVectorKernel(double *result, const double *mat, const double *vec, int matX, int matY)
 {
-
+	int i = threadIdx.x, j = threadIdx.y;
+	result[i] += mat[i*j] * vec[j];
 }
 
 void printArray(int size, int *a)
@@ -78,8 +79,15 @@ int main()
 		return 1;
 	}
 	const int matX = 25, matY = 25;
-	double* matrix = new double[matX*matY];
+	double* matrix = new double[matX*matY], double* vec=new double[matY], double* result;
 
+	cudaError_t cudaStatus = mulMatrixOnVectorWithCuda(result, matrix, vec,matX,matY);
+
+	cudaStatus = cudaDeviceReset();
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaDeviceReset failed!");
+		return 1;
+	}
 	return 0;
 }
 
@@ -210,11 +218,11 @@ cudaError_t mulMatrixOnVectorWithCuda(double * result, const double * mat, const
 	}
 
 	// Launch a kernel on the GPU with one thread for each element.
-	mulMatrixOnVectorKernel <<<1, size >>> (dev_c, dev_a, dev_b);//call from HOST on DEVICE
+	mulMatrixOnVectorKernel <<<1, matX*matY >>> (dev_c, dev_a, dev_b);//call from HOST on DEVICE
 
 													 // Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
+	if (cudaStatus != cudaSuccess) {	
 		fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
 		goto Error;
 	}
