@@ -3,6 +3,7 @@
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
+#include <time.h>
 
 cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
 
@@ -18,10 +19,10 @@ __global__ void addKernel(int *c, const int *a, const int *b)//global - выполняе
 	c[i] = a[i] + b[i];
 }
 
-__global__ void myAddKernel(int *c, const int *a, const int *b)//TODO:Одолжить
-{
-
-}
+//__global__ void myAddKernel(int *c, const int *a, const int *b)//TODO:Одолжить
+//{
+//
+//}
 
 __global__ void mulMatrixOnVectorKernel(double *result, const double *mat, const double *vec, int matX, int matY)
 {
@@ -43,6 +44,7 @@ int main()
 {
 	const int arraySize = 100, blockSize = 16;
 	int gridsize = arraySize / blockSize;
+	/*
 	int* a = new int[arraySize];
 	int* b = new int[arraySize];
 	int* c = new int[arraySize];
@@ -52,7 +54,6 @@ int main()
 		b[i] = (i + 1) * 7;
 		c[i] = 0;
 	}
-	
 
 	// Add vectors in parallel.
 	cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
@@ -78,10 +79,14 @@ int main()
 		fprintf(stderr, "cudaDeviceReset failed!");
 		return 1;
 	}
+	*/
 	const int matX = 25, matY = 25;
 	double* matrix = new double[matX*matY], double* vec=new double[matY], double* result;
 
+	clock_t t = clock();
 	cudaError_t cudaStatus = mulMatrixOnVectorWithCuda(result, matrix, vec,matX,matY);
+	t = clock() - t;
+	printf("It took me %d clicks (%f seconds).\n", t, ((float)t) / CLOCKS_PER_SEC);
 
 	cudaStatus = cudaDeviceReset();
 	if (cudaStatus != cudaSuccess) {
@@ -218,7 +223,7 @@ cudaError_t mulMatrixOnVectorWithCuda(double * result, const double * mat, const
 	}
 
 	// Launch a kernel on the GPU with one thread for each element.
-	mulMatrixOnVectorKernel <<<1, matX*matY >>> (dev_c, dev_a, dev_b);//call from HOST on DEVICE
+	mulMatrixOnVectorKernel <<<1, matX*matY >>> (*dev_res, *dev_mat, *dev_vec, matX, matY);//call from HOST on DEVICE
 
 													 // Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
